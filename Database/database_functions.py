@@ -185,34 +185,84 @@ def test_db_exists(con, table_name):
 
 
 
-def create_table(con, table_name, column_dict):
+# def create_table(con, table_name, column_dict):
+#     # Create a database table at the given connection if None exists
+#     # Data dict contains column names and datatypes
+#
+#     cnames = []
+#     db_col_name_folder = os.path.join(c.database_table_columns_path, _get_db_name(con))
+#     if not os.path.exists(db_col_name_folder):
+#         if not os.path.exists(os.path.split(db_col_name_folder)[0]):
+#             os.makedirs(os.path.split(db_col_name_folder)[0])
+#         os.makedirs(db_col_name_folder)
+#
+#     col_sql = ''
+#     for i, cname in enumerate(column_dict.keys()):
+#         cnames.append(cname)
+#         col_sql += "'" + cname + "' " + column_dict[cname]
+#         if i != len(column_dict.keys()) - 1:
+#             col_sql += ', '
+#     np.save(os.path.join(db_col_name_folder, str(table_name) + '.npy'), np.array(cnames))
+#     sql_command = """CREATE TABLE """ + str(table_name) + """ (""" + col_sql + """)"""
+#     _execute(con, sql_command)
+
+
+def create_table(con, table_name, column_dict, primary_key=None, foreign_key_dict=None):
     # Create a database table at the given connection if None exists
     # Data dict contains column names and datatypes
+    # Primary Key is the name of the column which is the primary key of this table (or None)
+    # Foreign key dict must contain 'Column', 'Foreign_Table', and 'Foreign_Column' keys (or None)
 
-    cnames = []
-    db_col_name_folder = os.path.join(c.database_table_columns_path, _get_db_name(con))
-    if not os.path.exists(db_col_name_folder):
-        if not os.path.exists(os.path.split(db_col_name_folder)[0]):
-            os.makedirs(os.path.split(db_col_name_folder)[0])
-        os.makedirs(db_col_name_folder)
+    if foreign_key_dict is None:
+        foreign_key_dict = {'Column': None, 'Foreign_Table': None, 'Foreign_Column': None}
+
+    for k in ['Foreign_Table', 'Column', 'Foreign_Column']:
+        if k not in foreign_key_dict.keys():
+            raise Exception('Foreign Key Dict Must Contain Foreign_Table, Column, and Foreign_Column Keys')
+
+    foreign_key = foreign_key_dict['Column']
+    foreign_table = foreign_key_dict['Foreign_Table']
+    foreign_column = foreign_key_dict['Foreign_Column']
+
+    #cnames = []
+    #db_col_name_folder = os.path.join(c.database_table_columns_path, _get_db_name(con))
+    # if not os.path.exists(db_col_name_folder):
+    #     if not os.path.exists(os.path.split(db_col_name_folder)[0]):
+    #         os.makedirs(os.path.split(db_col_name_folder)[0])
+    #     os.makedirs(db_col_name_folder)
 
     col_sql = ''
     for i, cname in enumerate(column_dict.keys()):
-        cnames.append(cname)
+        #cnames.append(cname)
         col_sql += "'" + cname + "' " + column_dict[cname]
+        if cname == primary_key:
+            col_sql += ' PRIMARY KEY'
         if i != len(column_dict.keys()) - 1:
             col_sql += ', '
-    np.save(os.path.join(db_col_name_folder, str(table_name) + '.npy'), np.array(cnames))
-    sql_command = """CREATE TABLE """ + str(table_name) + """ (""" + col_sql + """)"""
+    foreign_key_sql = ''
+    if foreign_key is not None and foreign_table is not None and foreign_column is not None:
+        foreign_key_sql = ', FOREIGN KEY(' + str(foreign_key) + ') REFERENCES ' + str(foreign_table) + '(' + str(foreign_column) + ')'
+    #np.save(os.path.join(db_col_name_folder, str(table_name) + '.npy'), np.array(cnames))
+    sql_command = """CREATE TABLE """ + str(table_name) + """ (""" + col_sql + foreign_key_sql + """);"""
     _execute(con, sql_command)
 
 
 
 
+def query_table_column_names(con, table_name):
+    # Query to return all the table names in the current database table
+
+    get_cols_command = """SELECT c.name FROM pragma_table_info('""" + str(table_name) + """') c;"""
+    cols = [x[0] for x in _query(con, get_cols_command)]
+    return cols
+
+
 def query_entire_table(con, table_name):
     # Just pull the whole table
     db_col_name_folder = os.path.join(c.database_table_columns_path, _get_db_name(con))
-    columns = np.load(os.path.join(db_col_name_folder, str(table_name) + '.npy'))
+    # columns = np.load(os.path.join(db_col_name_folder, str(table_name) + '.npy'))
+
+    columns = query_table_column_names(con, table_name)
 
     sql_command = """SELECT * FROM """ + table_name
     if columns is None:
@@ -238,9 +288,11 @@ def query_entire_columns(con, table_name, columns):
 
 
 
+
+
 def insert_rows(con, table_name, data):
     # Insert Some Rows In The Table
-    # Data is a Pandas Dataframe with Matchin Column Names to the DB
+    # Data is a Pandas Dataframe with Matching Column Names to the DB
 
     sql_command = """BEGIN TRANSACTION; """
     col_data = "'" + "', '".join(tuple([str(x) for x in data.columns])) + "'"

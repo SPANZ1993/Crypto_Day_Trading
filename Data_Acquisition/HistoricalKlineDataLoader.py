@@ -24,6 +24,7 @@ class HistoricalKlineDataLoader():
             'taker_buy_base_asset_volume': 'REAL',
             'taker_buy_quote_asset_volume': 'REAL'
         }
+        self.primary_key = 'open_time'
         self.limit = 1000
         self.interval_to_time_offset_dict = {  # Number of milliseconds per range
             '1m': 60000,
@@ -59,7 +60,7 @@ class HistoricalKlineDataLoader():
 
                 if not test_db_exists(con, self.table_name):
                     # Make the table if it doesn't exist
-                    create_table(con, self.table_name, self.column_dict)
+                    create_table(con, self.table_name, self.column_dict, primary_key=self.primary_key)
                     # Find the earliest possible time available for the symbol and interval we are interested in
                     time.sleep(10)
                     latest_time = find_oldest_kline_open_time_available(symbol=self.symbol, interval=self.interval) - 1

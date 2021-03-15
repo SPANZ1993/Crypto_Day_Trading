@@ -1,6 +1,7 @@
 import time
 import os
 
+
 from Database import create_connection, query_entire_table, test_db_exists, delete_duplicate_rows, create_table, insert_rows, query_entire_columns
 import config as c
 
@@ -18,6 +19,8 @@ class Historical_TSFresh_Data_Extraction_Manager():
                  tsfresh_data_table_names,
                  tsfresh_data_extractors,
                  time_col='open_time',
+                 tsfresh_df_primary_keys=None,
+                 tsfresh_df_foreign_key_dicts=None,
                  n_samples_per_iteration=1000):
         # db_path: The path to the database we are using
         # data_table_name: The path to the original database table from kline_loader
@@ -37,7 +40,10 @@ class Historical_TSFresh_Data_Extraction_Manager():
             self.tsfresh_data_extractors = tsfresh_data_extractors
         self.time_col = time_col
         self.n_samples_per_iteration = n_samples_per_iteration
-
+        if tsfresh_df_primary_keys is None:
+            self.tsfresh_df_primary_keys = [None] * len(self.tsfresh_data_table_names)
+        if tsfresh_df_foreign_key_dicts is None:
+            self.tsfresh_df_foreign_key_dicts = [None] * len(self.tsfresh_data_table_names)
     # def run(self):
 
     #   features = [[]*len(self.tsfresh_data_extractors)]
@@ -143,6 +149,8 @@ class Historical_TSFresh_Data_Extraction_Manager():
                     print(cur_features)
                     print("_____________________________________________________________")
                     cur_table_name = self.tsfresh_data_table_names[e_i]
+                    cur_primary_key = self.tsfresh_df_primary_keys[e_i]
+                    cur_foreign_key_dict = self.tsfresh_df_foreign_key_dicts[e_i]
                     print("COLS: ", cur_df.columns)
                     with create_connection(self.db_path) as con:
                         # drop_table(con, cur_table_name) #DEBUG?
@@ -153,7 +161,7 @@ class Historical_TSFresh_Data_Extraction_Manager():
                             col_dtype_d = {}
                             for c in cur_df.columns:
                                 col_dtype_d[c] = 'REAL'
-                            create_table(con, cur_table_name, col_dtype_d)
+                            create_table(con, cur_table_name, col_dtype_d, primary_key=cur_primary_key, foreign_key_dict=cur_foreign_key_dict)
                         insert_rows(con, cur_table_name, cur_df)
                         print("########################################")
                         # print("LEN TABLE BEFORE: ", len(query_entire_table(con, cur_table_name)))

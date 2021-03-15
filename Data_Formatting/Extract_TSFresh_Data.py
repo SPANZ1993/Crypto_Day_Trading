@@ -55,9 +55,15 @@ def convert_to_dataset(data, start_i, end_i, time_col='open_time', cols=None, wi
 
 
 
-def convert_dataset_to_tsfresh_dataset(X, col_names=None):
+def convert_dataset_to_tsfresh_dataset(X, col_names=None, tsfresh_fc_settings=None):
     # X is a 3d numpy array of "windowed data"
     # col_names... if provided... is the column name for each col vector in X (like a dataframe column)
+    # tsfresh_fc_settings ... if provided... is a dictionary denoting which ts features tsfresh calculates (see docs)
+
+    # If we aren't explicitly told which features to calculate... just do them all
+    if tsfresh_fc_settings is None:
+        tsfresh_fc_settings = ts.feature_extraction.ComprehensiveFCParameters()
+
 
     # Converts X into a dataframe of TSFresh Features
     n_samples = X.shape[0]
@@ -95,19 +101,19 @@ def convert_dataset_to_tsfresh_dataset(X, col_names=None):
 
     data = pd.DataFrame.from_dict(data)
 
-    data = ts.extract_features(data, column_id="id", column_sort="time")
+    data = ts.extract_features(data, column_id="id", column_sort="time", default_fc_parameters=tsfresh_fc_settings)
 
     return data
 
 
 
 def extract_data_z_norm_data_vs_end_of_window(df, start_i, end_i, prediction_cols, feature_cols, time_col,
-                                              window_size, timesteps_ahead, scale_data=True):
+                                              window_size, timesteps_ahead, tsfresh_fc_settings, scale_data=True):
     # Pull Out The Feature Column Only, and Create TSFresh Features
     # for i in range(len())
     X = convert_to_dataset(df, start_i, end_i, time_col=time_col, cols=feature_cols, window_size=window_size,
                            timesteps_ahead=timesteps_ahead, scale_data=True)
-    features = convert_dataset_to_tsfresh_dataset(X, col_names=feature_cols)
+    features = convert_dataset_to_tsfresh_dataset(X, col_names=feature_cols, tsfresh_fc_settings=tsfresh_fc_settings)
 
     # TODO: ALRIGHT BUDDY SO WE'VE GOT THAT CONVERT TO DATASET FUNCTION STARTED ABOVE
     # WE NEED TO FIGURE OUT A GOOD WAY TO RELIABLY TAKE A DATAFRAME
@@ -119,13 +125,17 @@ def extract_data_z_norm_data_vs_end_of_window(df, start_i, end_i, prediction_col
     # TRY SPINNING UP A DATA EXTRACTION MANAGER AND PASSING IT
     # AN EXTRACTOR THAT USES THIS FUNCTION
 
+    # TODO: ADD IN % CHANGE FROM WINDOW END TO PREDICTION VAL
     # PULL OUT OTHER STUFF WE WANT
     z_normed_scaled_vs_mean_arrs = []
     true_value_arrs = []
     window_mean_arrs = []
     window_std_arrs = []
     true_window_end_arrs = []
+    percent_change_vs_window_end_arrs = []
+    percent_change_vs_window_mean_arrs = []
     time_arr = []
+
 
     for pi, prediction_col in enumerate(prediction_cols):
         cur_z_normed_scaled_vs_mean = []
@@ -133,7 +143,8 @@ def extract_data_z_norm_data_vs_end_of_window(df, start_i, end_i, prediction_col
         cur_window_mean = []
         cur_window_std = []
         cur_true_window_end = []
-
+        cur_percent_change_vs_window_end = []
+        cur_percent_change_vs_window_mean = []
 
         for i in range(start_i, end_i + 1):
             if pi == 0:
@@ -151,6 +162,9 @@ def extract_data_z_norm_data_vs_end_of_window(df, start_i, end_i, prediction_col
             cur_window_mean.append(m)
             cur_window_std.append(std)
             cur_true_window_end.append(w_end)
+            cur_percent_change_vs_window_end.append(np.divide(true_val, w_end))
+            cur_percent_change_vs_window_mean.append(np.divide(true_val, m))
+
         for l in [cur_z_normed_scaled_vs_mean, cur_true_value, cur_window_mean, cur_window_std, cur_true_window_end]:
             assert (len(l) == len(features))
 
@@ -159,6 +173,8 @@ def extract_data_z_norm_data_vs_end_of_window(df, start_i, end_i, prediction_col
         window_mean_arrs.append(cur_window_mean)
         window_std_arrs.append(cur_window_std)
         true_window_end_arrs.append(cur_true_window_end)
+        percent_change_vs_window_end_arrs.append(cur_percent_change_vs_window_end)
+        percent_change_vs_window_mean_arrs.append(cur_percent_change_vs_window_mean)
 
 
     assert(len(set([len(x) for x in [z_normed_scaled_vs_mean_arrs, true_value_arrs, window_mean_arrs, window_std_arrs, true_window_end_arrs]]))==1)
@@ -173,12 +189,16 @@ def extract_data_z_norm_data_vs_end_of_window(df, start_i, end_i, prediction_col
         window_mean_col_name = '_' + str(prediction_col) + '_window_mean'
         window_std_col_name = '_' + str(prediction_col) + '_window_std'
         true_window_end_col_name = '_' + str(prediction_col) + '_true_window_end'
+        percent_change_vs_window_end_col_name = '_' + str(prediction_col) + '_percent_change_vs_window_end'
+        percent_change_vs_window_mean_col_name = '_' + str(prediction_col) + '_percent_change_vs_window_mean'
 
         features[z_normed_scaled_vs_mean_col_name] = z_normed_scaled_vs_mean_arrs[i]
         features[true_value_col_name] = true_value_arrs[i]
         features[window_mean_col_name] = window_mean_arrs[i]
         features[window_std_col_name] = window_std_arrs[i]
         features[true_window_end_col_name] = true_window_end_arrs[i]
+        features[percent_change_vs_window_end_col_name] = percent_change_vs_window_end_arrs
+        features[percent_change_vs_window_mean_col_name] = percent_change_vs_window_mean_arrs
     features[time_col] = time_arr
 
     # features['_high_z_normed_scaled_vs_mean'] = y_z_norm_scaled_vs_mean
