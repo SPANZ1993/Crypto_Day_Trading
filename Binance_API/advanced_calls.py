@@ -54,6 +54,8 @@ def get_rate_limits():
 
 
 def get_klines(symbol='DOGEUSD', interval='1w', start_time=None, end_time=None, limit=None):
+    print("TRYING TO GET KLINES")
+
     unformatted_data = _get_klines(symbol=symbol, interval=interval, start_time=start_time, end_time=end_time,
                                    limit=limit)
     open_time = []
@@ -93,6 +95,7 @@ def get_klines(symbol='DOGEUSD', interval='1w', start_time=None, end_time=None, 
         'taker_buy_quote_asset_volume': taker_buy_quote_asset_volume
     }
     assert (len(set([len(data[k]) for k in data.keys()])) == 1)
+    print("GOT EM")
     return data
 
 

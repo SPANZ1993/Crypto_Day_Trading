@@ -52,6 +52,7 @@ def _query(con, sql_command, lock_timeout=None):
                 try:
                     return con.cursor().execute(sql_command).fetchall()
                 except Exception as e:
+                    print(e)
                     if isinstance(e, sqlite3.OperationalError) and 'database is locked' in str(e):
                         print("DB Locked, waiting to execute: ", sql_command)
                         time.sleep(1)
@@ -134,9 +135,11 @@ def _execute_script(con, sql_command, lock_timeout=None):
         if lock_timeout is None:
             while True:
                 try:
+                    print("AY")
                     con.cursor().executescript(sql_command)
                     return True
                 except Exception as e:
+                    print(e)
                     if isinstance(e, sqlite3.OperationalError) and 'database is locked' in str(e):
                         print("DB Locked, waiting to execute: ", sql_command)
                         time.sleep(1)
@@ -144,6 +147,7 @@ def _execute_script(con, sql_command, lock_timeout=None):
             n_retries = 0
             while n_retries < lock_timeout:
                 try:
+                    print("OOH")
                     con.cursor().executescript(sql_command)
                     return True
                 except Exception as e:
@@ -259,7 +263,7 @@ def query_table_column_names(con, table_name):
 
 def query_entire_table(con, table_name):
     # Just pull the whole table
-    db_col_name_folder = os.path.join(c.database_table_columns_path, _get_db_name(con))
+    # db_col_name_folder = os.path.join(c.database_table_columns_path, _get_db_name(con))
     # columns = np.load(os.path.join(db_col_name_folder, str(table_name) + '.npy'))
 
     columns = query_table_column_names(con, table_name)
@@ -290,7 +294,7 @@ def query_entire_columns(con, table_name, columns):
 
 
 
-def insert_rows(con, table_name, data):
+def insert_rows(con, table_name, data, ignore=True):
     # Insert Some Rows In The Table
     # Data is a Pandas Dataframe with Matching Column Names to the DB
 
@@ -298,7 +302,11 @@ def insert_rows(con, table_name, data):
     col_data = "'" + "', '".join(tuple([str(x) for x in data.columns])) + "'"
     for i, row in enumerate(data.values):
         row_data = "'" + "', '".join(tuple([str(x) for x in row])) + "'"
-        sql_command += """INSERT INTO '""" + str(
+        if ignore:
+            insert_sql = """INSERT OR IGNORE INTO '"""
+        else:
+            insert_sql = """INSERT INTO '"""
+        sql_command += insert_sql + str(
             table_name) + """' (""" + col_data + """) VALUES (""" + row_data + """); """
     sql_command += """COMMIT;"""
     return _execute_script(con, sql_command)
