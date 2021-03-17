@@ -303,10 +303,9 @@ if __name__ == '__main__':
         extractors.append(cur_extractor)
         table_names.append(cur_table_name)
 
-        # with create_connection(db_path) as con:
-        #     if test_db_exists(con, cur_table_name):
-        #         drop_table(con, cur_table_name)
-
+        with create_connection(db_path) as con:
+            if test_db_exists(con, cur_table_name):
+                drop_table(con, cur_table_name)
 
     extraction_manager = Historical_TSFresh_Data_Extraction_Manager(
         db_path=db_path,
@@ -314,6 +313,8 @@ if __name__ == '__main__':
         tsfresh_data_table_names=table_names,
         tsfresh_data_extractors=extractors,
         time_col='open_time',
+        tsfresh_df_primary_keys=['open_time']*len(extractors),
+        tsfresh_df_foreign_key_dicts=[{'Column': 'open_time', 'Foreign_Table': data_table_name, 'Foreign_Column': 'open_time'}]*len(extractors),
         n_samples_per_iteration=1000)
 
     extraction_manager.run()

@@ -160,6 +160,9 @@ class Historical_TSFresh_Data_Extraction_Manager():
                             col_dtype_d = {}
                             for c in cur_df.columns:
                                 col_dtype_d[c] = 'REAL'
+                            print("CUR PRIMARY KEY: ", cur_primary_key)
+                            print("CUR FOREIGN KEY DICT: ", cur_foreign_key_dict)
+                            time.sleep(10)
                             create_table(con, cur_table_name, col_dtype_d, primary_key=cur_primary_key, foreign_key_dict=cur_foreign_key_dict)
                         insert_rows(con, cur_table_name, cur_df)
                         print("########################################")
