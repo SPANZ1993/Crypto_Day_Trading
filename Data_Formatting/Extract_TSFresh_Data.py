@@ -155,7 +155,12 @@ def extract_data_z_norm_data_vs_end_of_window(df, start_i, end_i, prediction_col
             std = np.std(cur_window)
             w_end = cur_window[len(cur_window) - 1]
             true_val = cur_prediction_window[len(cur_prediction_window) - 1]
-            scaled_val = np.divide(np.subtract(true_val, m), std)
+
+            if std == 0: # DO THIS JUST TO PREVENT NANS
+                scaled_std = 0.0000001
+            else:
+                scaled_std = std
+            scaled_val = np.divide(np.subtract(true_val, m), scaled_std)
 
             cur_z_normed_scaled_vs_mean.append(scaled_val)
             cur_true_value.append(true_val)
@@ -197,8 +202,8 @@ def extract_data_z_norm_data_vs_end_of_window(df, start_i, end_i, prediction_col
         features[window_mean_col_name] = window_mean_arrs[i]
         features[window_std_col_name] = window_std_arrs[i]
         features[true_window_end_col_name] = true_window_end_arrs[i]
-        features[percent_change_vs_window_end_col_name] = percent_change_vs_window_end_arrs
-        features[percent_change_vs_window_mean_col_name] = percent_change_vs_window_mean_arrs
+        features[percent_change_vs_window_end_col_name] = percent_change_vs_window_end_arrs[i]
+        features[percent_change_vs_window_mean_col_name] = percent_change_vs_window_mean_arrs[i]
     features[time_col] = time_arr
 
     # features['_high_z_normed_scaled_vs_mean'] = y_z_norm_scaled_vs_mean
@@ -293,7 +298,8 @@ if __name__ == '__main__':
             prediction_cols=['open', 'close', 'high', 'low'],
             time_col='open_time',
             window_size=60,
-            timesteps_ahead=30)
+            timesteps_ahead=30,
+            tsfresh_fc_settings=c.tsfresh_feature_calculation_settings_dict[feature])
         extractors.append(cur_extractor)
         table_names.append(cur_table_name)
 

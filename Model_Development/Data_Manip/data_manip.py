@@ -29,14 +29,22 @@ def pull_out_nan_y_col_vals(data, y_col):
 
 
 
-def drop_nan_cols(X):
+def drop_nan_cols(X, return_df=False):
   # DROP COLUMNS FROM A DATAFRAME THAT CONTAIN NANS
+  # return_df: If true, return a dataframe, otherwise
 
-  df = pd.DataFrame(X)
+  if not isinstance(X, pd.DataFrame):
+    df = pd.DataFrame(X)
+  else:
+    df = X
   df = df.replace([np.inf, -np.inf], np.nan)
   df = df.dropna(axis='columns')
-  X = df.values
-  return X
+  if return_df:
+    return df
+  else:
+    return df.values
+
+
 
 def replace_nan_str_with_nan(data):
   # CHANGE THE STRING REP OF NAN AND INF TO THE NUMERICAL REP

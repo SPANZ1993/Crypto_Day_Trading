@@ -1,17 +1,22 @@
+import tsfresh as ts
+
 class TSFresh_Data_Extractor():
 
     def __init__(self, extract_data_func, feature_cols, prediction_cols, time_col='open_time', window_size=60,
-                 timesteps_ahead=30):
+                 timesteps_ahead=30, tsfresh_fc_settings=ts.feature_extraction.ComprehensiveFCParameters()):
         # extract_data_func: function that actually makes the TSfresh features
         # time_col: the column that we are using as our time column (database key)
         # window_size: The size of the window we want to examine # NOTE: The last index in the window is the current i
         # timesteps_ahead: The number of timesteps out we are trying to predict from the end of the window # NOTE: The number of timesteps in the future from the current i
+        # tsfresh_fc_settings: Dictionary denoting which tsfresh features should be calculated by this extractor (Defaults to all of them)
         self.extract_data_func = extract_data_func
         self.feature_cols = feature_cols
         self.prediction_cols = prediction_cols
         self.time_col = time_col
         self.window_size = window_size
         self.timesteps_ahead = timesteps_ahead
+        self.tsfresh_fc_settings = tsfresh_fc_settings
+
 
     def _is_usable_extract_data(self, df, start_i, end_i, prediction_cols, feature_cols, time_col, window_size,
                                 timesteps_ahead):
@@ -29,8 +34,8 @@ class TSFresh_Data_Extractor():
             raise Exception("End Index Out of Range")
 
     def _trim_is(self, df, start_i, end_i, window_size, timesteps_ahead):
-        # IF WE ARE GOING TO ASK FOR DATA THAT IS "OFF THE EDGE" OF THE DATA
-        # THAT WE HAVE, THEN CHANGE THE INDICES
+        # IF WE ARE GOING TO ASK FOR DATA THAT IS "OFF THE EDGE" OF THE DATA THAT WE HAVE
+        # THEN CHANGE THE INDICES
         new_start_i = start_i
         new_end_i = end_i
         if start_i - window_size < 0:
@@ -51,7 +56,8 @@ class TSFresh_Data_Extractor():
                                      window_size=self.window_size, timesteps_ahead=self.timesteps_ahead)
         return self.extract_data_func(df=df, start_i=start_i, end_i=end_i, prediction_cols=self.prediction_cols,
                                       feature_cols=self.feature_cols, time_col=self.time_col,
-                                      window_size=self.window_size, timesteps_ahead=self.timesteps_ahead)
+                                      window_size=self.window_size, timesteps_ahead=self.timesteps_ahead,
+                                      tsfresh_fc_settings=self.tsfresh_fc_settings)
 
 if __name__ == '__main__':
     pass

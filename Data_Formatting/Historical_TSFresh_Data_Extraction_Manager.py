@@ -94,8 +94,7 @@ class Historical_TSFresh_Data_Extraction_Manager():
         for i in range(len(self.tsfresh_data_extractors)):
             features.append([])
         with create_connection(self.db_path) as con:
-            all_data = query_entire_table(con, self.data_table_name)  # DEBUG
-            # all_data = query_entire_table(con, self.data_table_name)
+            all_data = query_entire_table(con, self.data_table_name)
             print("ALL DATA: ", len(all_data))
         min_time_in_db = None
         max_time_in_db = None
