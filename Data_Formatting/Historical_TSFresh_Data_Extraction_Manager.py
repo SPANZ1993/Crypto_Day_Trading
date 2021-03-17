@@ -42,8 +42,12 @@ class Historical_TSFresh_Data_Extraction_Manager():
         self.n_samples_per_iteration = n_samples_per_iteration
         if tsfresh_df_primary_keys is None:
             self.tsfresh_df_primary_keys = [None] * len(self.tsfresh_data_table_names)
+        else:
+            self.tsfresh_df_primary_keys = tsfresh_df_primary_keys
         if tsfresh_df_foreign_key_dicts is None:
             self.tsfresh_df_foreign_key_dicts = [None] * len(self.tsfresh_data_table_names)
+        else:
+            self.tsfresh_df_foreign_key_dicts = tsfresh_df_foreign_key_dicts
     # def run(self):
 
     #   features = [[]*len(self.tsfresh_data_extractors)]
