@@ -1,45 +1,10 @@
-# BASE LEVEL API CALLS
-# THESE JUST CALL THE API
-
-import os
-import sys
-import requests
-import json
-import traceback
-import datetime
-import numpy as np
-import pandas as pd
-import time
-import matplotlib.pyplot as plt
-import sqlite3
-from sqlite3 import Error
-
-class StatusCodeException(Exception):
-    """Raised when the input value is too small"""
-    pass
+from API_Utils.API_Calls import _rest_api_call
 
 
-def _api_call(url):
-    # Make the call with the given API
-    try:
-        rurl = r'{}'.format(url)
-        r = requests.get(rurl)
-        if int(r.status_code) == 200:
-            return json.loads(r.text)
-        else:
-            raise (StatusCodeException(r.status_code))
-    except StatusCodeException as e:
-        print("Bad Status Code: " + str(r.status_code))
-        traceback.print_exc()
-        raise (e)
-    except:
-        print("ERROR IN CALL: ", url)
-        traceback.print_exc()
-        return None
 
 
 def _get_exchange_info():
-    return _api_call('https://api.binance.us/api/v3/exchangeInfo')
+    return _rest_api_call('https://api.binance.us/api/v3/exchangeInfo')
 
 
 def _get_klines(symbol, interval, start_time=None, end_time=None, limit=None):
@@ -63,7 +28,7 @@ def _get_klines(symbol, interval, start_time=None, end_time=None, limit=None):
         if s is not None:
             full_param_str += '&' + s
 
-    data_dict = _api_call('https://api.binance.us/api/v3/klines' + full_param_str)
+    data_dict = _rest_api_call('https://api.binance.us/api/v3/klines' + full_param_str)
     return data_dict
 
 if __name__ == '__main__':

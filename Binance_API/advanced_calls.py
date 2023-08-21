@@ -14,13 +14,13 @@ import matplotlib.pyplot as plt
 import sqlite3
 from sqlite3 import Error
 
-from Binance_API.base_api_calls import _api_call, _get_klines, _get_exchange_info
-from utils.times import cur_time
+from Binance_API.base_api_calls import _rest_api_call, _get_klines, _get_exchange_info
+from utils.times import cur_time, unix_to_datetime
 
 
 def ping_binance():
     # Return True If You Get The Expected Response From Ping Else Return False
-    data_dict = _api_call('https://api.binance.us/api/v3/ping')
+    data_dict = _rest_api_call('https://api.binance.us/api/v3/ping')
     if data_dict == {}:
         return True
     else:
@@ -127,9 +127,10 @@ if __name__ == '__main__':
     import datetime
     ct = cur_time()
     print(ct)
-    print(datetime.datetime.fromtimestamp(int(ct/1000)))
+    print(unix_to_datetime(ct))
+    # assert(False)
     #print(ping_binance())
-    print(get_klines('BTCUSD', '8h', start_time=ct-(86400*1000), end_time=ct))
-
+    #print(get_klines('BTCUSD', '1m', start_time=ct-(3600*200), end_time=ct-(3600*1)))
+    o = get_klines('BTCUSD', '1m', start_time=None, end_time=None)
     print('.......')
-    print(find_oldest_kline_open_time_available())
+    #print(find_oldest_kline_open_time_available())

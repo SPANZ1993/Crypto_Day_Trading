@@ -1,17 +1,31 @@
 
 
 import time
-from datetime import datetime
+import datetime
 
-def cur_time():
-  # Return the current Unix timestamp in milliseconds
-  return round(time.time() * 1000)
+from enum import Enum
 
-def unix_to_datetime(t):
-  return datetime.fromtimestamp(float(t)/1000.0)
+class TimeScale(Enum):
+  SECONDS = 1
+  MILLISECONDS = 1000
+  MICROSECONDS = 1000000
+  NANOSECONDS = 1000000000
+
+def cur_time(timescale=TimeScale.MILLISECONDS):
+  # Return the current Unix timestamp in milliseconds (UTC)
+  return datetime_to_unix(datetime.datetime.now(datetime.timezone.utc), timescale=timescale)
+
+def unix_to_datetime(t, timescale=TimeScale.MILLISECONDS):
+  return datetime.datetime.fromtimestamp(int(t/timescale.value))
+
+
+def datetime_to_unix(dt, timescale=TimeScale.MILLISECONDS):
+  utc_time = dt.replace(tzinfo=datetime.timezone.utc)
+  return round(utc_time.timestamp() * timescale.value)
 
 
 if __name__ == '__main__':
-  import datetime
-  print("SHOULD BE NOW: ", datetime.datetime.fromtimestamp(int(cur_time()/1000)))
+  t = cur_time()
+  print("TIMESTAMP: ", t)
+  print("DATETIME: ", unix_to_datetime(t))
 
